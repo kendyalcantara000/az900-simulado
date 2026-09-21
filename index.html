@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AZ·900 — Simulador de examen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#0A0E14;
+    --surface:#12181F;
+    --surface-2:#1B222B;
+    --border:#28313C;
+    --text:#E8ECF1;
+    --muted:#8B97A6;
+    --accent:#4C8DFF;
+    --accent-dim:#284169;
+    --amber:#F2B84B;
+    --amber-dim:#4A3B1C;
+    --success:#35D399;
+    --success-dim:#123829;
+    --danger:#FF6B6B;
+    --danger-dim:#3A1E20;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:inherit;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px); -webkit-tap-highlight-color: transparent;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .font-display{font-family:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;}
+  .font-mono{font-family:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;}
+
+  ::selection{ background: var(--accent-dim); color:#fff; }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:#2A3441; border-radius:8px; }
+
+  .grid-veil{
+    background-image:
+      linear-gradient(rgba(76,141,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(76,141,255,0.05) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, black 30%, transparent 75%);
+  }
+
+  .card{ background:var(--surface); border:1px solid var(--border); }
+  .card-2{ background:var(--surface-2); border:1px solid var(--border); }
+
+  .btn-primary{
+    background:var(--accent);
+    color:#04101F;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    box-shadow: 0 0 0 0 rgba(76,141,255,0);
+  }
+  .btn-primary:hover{ background:#679DFF; box-shadow:0 6px 24px -6px rgba(76,141,255,.55); }
+  .btn-primary:active{ transform: scale(0.98); }
+  .btn-primary:disabled{ opacity:.35; box-shadow:none; cursor:not-allowed; }
+
+  .btn-ghost{
+    background:transparent; border:1px solid var(--border); color:var(--text);
+    transition: border-color .12s ease, background .12s ease;
+  }
+  .btn-ghost:hover{ border-color:#3A4656; background:var(--surface-2); }
+  .btn-ghost:disabled{ opacity:.3; cursor:not-allowed; }
+
+  .opt-btn{
+    display:flex; align-items:flex-start; gap:.75rem;
+    width:100%; text-align:left;
+    padding:.9rem 1rem;
+    border-radius:.65rem;
+    border:1px solid var(--border);
+    background:var(--surface);
+    transition: border-color .12s ease, background .12s ease, transform .1s ease;
+    cursor:pointer;
+  }
+  .opt-btn:hover:not(.locked){ border-color:#3F5A8A; background:var(--surface-2); }
+  .opt-btn:active:not(.locked){ transform: scale(0.995); }
+  .opt-btn.selected{ border-color:var(--accent); background: rgba(76,141,255,0.08); }
+  .opt-btn.correct{ border-color:var(--success); background: rgba(53,211,153,0.09); }
+  .opt-btn.incorrect{ border-color:var(--danger); background: rgba(255,107,107,0.09); }
+  .opt-btn.dim{ opacity:.5; }
+
+  .opt-badge{
+    flex:none; width:1.85rem; height:1.85rem; border-radius:.4rem;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono', monospace; font-size:.8rem; font-weight:600;
+    background:var(--surface-2); border:1px solid var(--border); color:var(--muted);
+  }
+  .opt-btn.selected .opt-badge{ background:var(--accent-dim); border-color:var(--accent); color:#DCE8FF; }
+  .opt-btn.correct .opt-badge{ background:var(--success-dim); border-color:var(--success); color:#B6F5DC; }
+  .opt-btn.incorrect .opt-badge{ background:var(--danger-dim); border-color:var(--danger); color:#FFD3D3; }
+
+  .chip{
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.25rem .65rem; border-radius:999px;
+    font-size:.72rem; font-weight:500; letter-spacing:.01em;
+    border:1px solid var(--border); color:var(--muted); background:var(--surface-2);
+  }
+
+  .progress-track{ height:6px; border-radius:999px; background:var(--surface-2); overflow:hidden; border:1px solid var(--border); }
+  .progress-fill{ height:100%; background:var(--accent); border-radius:999px; transition: width .3s ease; }
+
+  .nav-dot{
+    width:2.1rem; height:2.1rem; border-radius:.5rem;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:.72rem;
+    border:1px solid var(--border); background:var(--surface); color:var(--muted);
+    transition: all .12s ease; flex:none; position:relative;
+  }
+  .nav-dot:hover{ border-color:#3F5A8A; }
+  .nav-dot.current{ border-color:var(--accent); color:#fff; }
+  .nav-dot.answered{ background:var(--surface-2); color:var(--text); }
+  .nav-dot.correct-mark{ background:var(--success-dim); border-color:var(--success); color:#B6F5DC; }
+  .nav-dot.incorrect-mark{ background:var(--danger-dim); border-color:var(--danger); color:#FFD3D3; }
+  .nav-dot.flag::after{
+    content:''; position:absolute; top:-3px; right:-3px;
+    width:8px; height:8px; border-radius:50%; background:var(--amber);
+    border:2px solid var(--bg);
+  }
+
+  .mode-card{ transition: border-color .15s ease, transform .15s ease, background .15s ease; cursor:pointer; }
+  .mode-card:hover{ border-color:#3F5A8A; transform: translateY(-2px); }
+
+  .fade-in{ animation: fadeIn .28s ease both; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .ring-bg{ stroke:var(--surface-2); }
+  .ring-fill{ stroke:var(--accent); stroke-linecap:round; transition: stroke-dashoffset .6s cubic-bezier(.4,0,.2,1); }
+  .ring-fill.pass{ stroke:var(--success); }
+  .ring-fill.fail{ stroke:var(--danger); }
+
+  .toast{
+    position:fixed; left:50%; bottom:1.4rem; transform:translateX(-50%) translateY(120%);
+    background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+    padding:.7rem 1.1rem; border-radius:.6rem; font-size:.85rem;
+    box-shadow:0 10px 40px -10px rgba(0,0,0,.6);
+    transition: transform .35s cubic-bezier(.4,0,.2,1);
+    z-index:80; display:flex; align-items:center; gap:.5rem;
+  }
+  .toast.show{ transform:translateX(-50%) translateY(0); }
+
+  .sheet{
+    position:fixed; inset:0; background:rgba(5,8,12,.7); backdrop-filter: blur(2px);
+    display:flex; align-items:flex-end; justify-content:center; z-index:70;
+    opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .sheet.open{ opacity:1; pointer-events:auto; }
+  .sheet-panel{
+    background:var(--surface); border:1px solid var(--border); border-bottom:none;
+    border-radius:1rem 1rem 0 0; width:100%; max-width:640px; max-height:78vh; overflow-y:auto;
+    padding:1.25rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom,0px));
+    transform:translateY(100%); transition:transform .28s cubic-bezier(.4,0,.2,1);
+  }
+  .sheet.open .sheet-panel{ transform:translateY(0); }
+
+  details.review-item > summary{ list-style:none; cursor:pointer; }
+  details.review-item > summary::-webkit-details-marker{ display:none; }
+  details.review-item[open] .chev{ transform: rotate(90deg); }
+
+  .focus-ring:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================
+   AZ-900 SIMULATOR — DATA
+========================================================= */
+const MODULES = {
+  1: "Servicios y conceptos base",
+  2: "Arquitectura y gobernanza",
+  3: "Precios y opciones de cómputo"
+};
+
+const QUESTIONS = [
+{id:1,module:1,q:"Una startup dominicana necesita alquilar máquinas virtuales para instalar su propio sistema operativo, configurar redes virtuales y controlar totalmente el entorno de ejecución, sin preocuparse por comprar servidores físicos. ¿Qué modelo de servicio en la nube describe mejor esta necesidad?",options:["SaaS","PaaS","IaaS","Cloud privado"],correct:2,explain:"IaaS es correcta porque el proveedor entrega la infraestructura (servidores, redes, almacenamiento, virtualización) y el cliente administra el sistema operativo, las aplicaciones y los datos, tal como describe el escenario. SaaS queda descartada porque ahí solo se usa un software terminado, sin control del SO. PaaS también se descarta porque el proveedor administra el sistema operativo, y aquí la empresa quiere instalarlo ella misma. Cloud privado no aplica porque es un modelo de implementación (quién usa la infraestructura), no un modelo de servicio (qué capa administras)."},
+{id:2,module:1,q:"Una empresa quiere desarrollar y publicar una aplicación web rápidamente, sin administrar servidores, redes, sistema operativo ni parches de seguridad del SO; solo quiere escribir código y publicarlo. ¿Qué modelo de servicio es más adecuado?",options:["IaaS","PaaS","SaaS","Infraestructura local (on-premises)"],correct:1,explain:"PaaS es correcta porque entrega una plataforma lista (infraestructura + SO + herramientas) para que el cliente solo cree, publique y administre su aplicación y sus datos. IaaS se descarta porque obligaría a administrar el SO y sus parches, justo lo que la empresa evita. SaaS se descarta porque ahí no se 'desarrolla' nada propio, solo se consume software ya construido. Infraestructura local implica comprar y mantener todo el hardware, lo opuesto a lo buscado."},
+{id:3,module:1,q:"Un empleado accede a Microsoft 365 desde su navegador para redactar documentos, sin instalar nada ni administrar servidores. ¿Qué modelo de servicio representa este caso?",options:["IaaS","PaaS","SaaS","Cloud híbrido"],correct:2,explain:"SaaS es correcta: Microsoft 365 es un software terminado que el proveedor administra por completo (infraestructura, plataforma y aplicación), y el usuario solo lo consume. IaaS y PaaS se descartan porque ambas implicarían que el cliente administra algún componente técnico (SO o desarrollo propio), algo que no ocurre aquí. Cloud híbrido no aplica porque es un modelo de implementación, no de servicio, y no hay infraestructura local mencionada."},
+{id:4,module:1,q:"Una entidad bancaria debe cumplir regulaciones estrictas de residencia de datos y desea mantener sistemas críticos en sus propios servidores, mientras usa la nube pública solo para respaldos y escalado temporal durante campañas promocionales. ¿Qué modelo de implementación describe esta estrategia?",options:["Cloud público","Cloud privado","Cloud híbrido","SaaS"],correct:2,explain:"Cloud híbrido es correcta porque combina infraestructura privada/local con servicios de nube pública, exactamente lo descrito: sistemas críticos propios + nube pública para respaldos y escalado. Cloud público se descarta porque el banco no depende únicamente de la nube pública. Cloud privado se descarta porque también usa la nube pública, no exclusivamente infraestructura propia. SaaS es un modelo de servicio, no de implementación, así que no responde a la pregunta."},
+{id:5,module:1,q:"Una empresa de logística contrata Azure y solo paga por las horas exactas que sus máquinas virtuales de prueba permanecen encendidas, sin comprometerse a ningún contrato de largo plazo. ¿Qué característica del modelo de precios de Azure se aplica?",options:["Instancia reservada","Plan de ahorro","Pago por uso (Pay-as-you-go)","Host dedicado"],correct:2,explain:"Pago por uso es correcta porque permite pagar únicamente por el tiempo y los recursos consumidos, sin compromiso a largo plazo, ideal para pruebas y cargas impredecibles. Instancia reservada y Plan de ahorro se descartan porque ambas exigen comprometerse de 1 a 3 años a cambio de un descuento, justo lo contrario de 'sin comprometerse'. Host dedicado se refiere a tener un servidor físico exclusivo, no a la forma de facturación por tiempo de uso."},
+{id:6,module:1,q:"Una empresa almacena 500 GB de archivos en Azure y además transfiere grandes volúmenes de esos archivos hacia servidores externos a Internet cada mes. ¿Qué componente de costo se cobra generalmente por esa salida de datos hacia Internet?",options:["Computación","Transferencia de datos (salida)","Entrada de datos","Licenciamiento de software"],correct:1,explain:"Transferencia de datos (salida) es correcta porque en Azure la salida de datos ('egress') hacia Internet u otras ubicaciones suele generar costos, a diferencia de la entrada. Computación se descarta porque se refiere al procesamiento (CPU/RAM), no al movimiento de datos. Entrada de datos se descarta porque, según el material, esa dirección suele ser gratuita, no la que se cobra aquí. Licenciamiento no aplica porque no se menciona ningún software con licencia; el costo descrito es exclusivamente por tráfico de salida."},
+{id:7,module:1,q:"Una empresa usa Azure App Service (PaaS) para alojar su aplicación web. Necesita saber quién es responsable de aplicar los parches de seguridad al sistema operativo subyacente. Según el modelo de responsabilidad compartida, ¿de quién es esa responsabilidad?",options:["Siempre del cliente, sin importar el modelo de servicio","Siempre de Microsoft, sin importar el modelo de servicio","Del proveedor (Microsoft), ya que en PaaS administra la infraestructura y el sistema operativo","Es una responsabilidad que nunca se gestiona en la nube"],correct:2,explain:"La opción correcta indica que es del proveedor, porque en PaaS Microsoft administra la infraestructura física, servidores, red, almacenamiento y sistema operativo, mientras el cliente se enfoca en su aplicación y datos. 'Siempre del cliente' es incorrecta porque el reparto cambia según el modelo de servicio, no es una regla fija. 'Siempre de Microsoft' también es incorrecta por la misma razón (en IaaS, por ejemplo, el SO es responsabilidad del cliente). La última opción es incorrecta porque el modelo de responsabilidad compartida precisamente define y gestiona quién hace qué; no queda sin gestionar."},
+{id:8,module:1,q:"Independientemente de si una organización usa SaaS, PaaS, IaaS o infraestructura local, hay una categoría de responsabilidades que siempre recae en el cliente. ¿Cuál de las siguientes es siempre responsabilidad del cliente en Azure?",options:["Los centros de datos físicos","El hardware de red físico","La información, los datos y las identidades/cuentas de los usuarios","Los hosts físicos"],correct:2,explain:"La opción correcta es la información, los datos y las identidades/cuentas, porque sin importar el modelo, el cliente siempre decide qué datos guardar, quién accede a ellos y cómo gestiona sus cuentas de usuario. Los centros de datos físicos, el hardware de red y los hosts físicos se descartan porque esos tres son siempre responsabilidad del proveedor de la nube (Microsoft), incluso en el modelo con mayor responsabilidad del cliente (IaaS)."},
+{id:9,module:1,q:"Una empresa migra completamente su infraestructura desde servidores propios hacia IaaS, y luego, meses después, migra su aplicación hacia un modelo PaaS. ¿Qué sucede con la cantidad de responsabilidades técnicas que administra la empresa en ese proceso?",options:["Aumentan progresivamente al pasar de IaaS a PaaS","Se mantienen exactamente iguales en ambos modelos","Disminuyen, ya que el proveedor asume progresivamente más responsabilidades","Desaparecen por completo en PaaS, incluyendo la responsabilidad sobre los datos"],correct:2,explain:"La respuesta correcta es que disminuyen, porque al avanzar de infraestructura local hacia IaaS, PaaS y SaaS, el proveedor asume cada vez más responsabilidades y el cliente administra cada vez menos componentes técnicos. 'Aumentan' es lo opuesto a lo que ocurre realmente. 'Se mantienen iguales' es incorrecta porque en PaaS el proveedor administra más elementos (como el SO) que en IaaS. 'Desaparecen por completo' es incorrecta porque incluso en SaaS el cliente sigue siendo responsable de sus datos, usuarios y dispositivos; esa responsabilidad nunca desaparece."},
+{id:10,module:1,q:"Una empresa con oficinas en varios países utiliza un proveedor que le entrega recursos y servicios tecnológicos a través de Internet, compartiendo la misma infraestructura física con otros clientes de manera aislada (como un edificio de apartamentos). ¿Qué modelo de implementación describe este escenario?",options:["Cloud privado","Cloud público","Cloud híbrido","Infraestructura local dedicada"],correct:1,explain:"Cloud público es correcta porque es el modelo donde el proveedor ofrece recursos a múltiples clientes a través de Internet, administrando la infraestructura compartida mientras cada cliente usa solo lo que contrata (la analogía del edificio de apartamentos). Cloud privado se descarta porque implica uso exclusivo por una sola organización, no compartido. Cloud híbrido se descarta porque no hay mención de infraestructura propia combinada con la nube. 'Infraestructura local dedicada' no es una categoría válida y contradice la idea de compartir infraestructura con otros clientes."},
+{id:11,module:2,q:"Una empresa dominicana crea una aplicación pensada principalmente para usuarios ubicados en el Caribe y quiere minimizar la latencia eligiendo la ubicación de sus servidores adecuadamente. ¿Qué concepto de Azure debe considerar principalmente?",options:["Zona de disponibilidad","Región de Azure","Grupo de administración","Punto de presencia (PoP)"],correct:1,explain:"Región de Azure es correcta porque es la ubicación geográfica que contiene la infraestructura; elegir la región más cercana a los usuarios reduce la distancia que recorren los datos y, por tanto, la latencia. Zona de disponibilidad se descarta porque son ubicaciones físicas dentro de una región, orientadas a resiliencia ante fallas, no a la elección geográfica principal. Grupo de administración se descarta porque organiza suscripciones, no ubicaciones físicas de despliegue. Punto de presencia se descarta porque se relaciona con conectividad de red, no con la ubicación de despliegue de los recursos."},
+{id:12,module:2,q:"Una empresa quiere preparar un plan de recuperación ante desastres, manteniendo su aplicación principal en una región de Azure y una copia de sus recursos críticos en otra región relacionada dentro de la misma área geográfica amplia. ¿Qué concepto describe la relación entre esas dos regiones?",options:["Zonas de disponibilidad","Regiones soberanas","Regiones emparejadas","Grupos de recursos"],correct:2,explain:"Regiones emparejadas es correcta porque son dos regiones que Microsoft relaciona dentro de la misma área geográfica amplia, con el objetivo principal de apoyar la continuidad del negocio y la recuperación ante desastres. Zonas de disponibilidad se descarta porque están dentro de una misma región, no relacionan dos regiones distintas. Regiones soberanas se descarta porque responden a requisitos de soberanía y cumplimiento gubernamental, no a recuperación ante desastres entre regiones emparejadas. Grupos de recursos se descarta porque son contenedores de organización de recursos, sin relación con resiliencia geográfica."},
+{id:13,module:2,q:"Una institución gubernamental necesita almacenar y procesar información bajo normas legales y regulatorias muy específicas de su país, separadas de la infraestructura comercial general de Azure. ¿Qué concepto responde mejor a esta necesidad?",options:["Región emparejada","Zona de disponibilidad","Región soberana","Punto de presencia"],correct:2,explain:"Región soberana es correcta porque está diseñada específicamente para cumplir requisitos especiales de soberanía, seguridad y cumplimiento normativo de determinados gobiernos, pudiendo estar separada de la infraestructura comercial general. Región emparejada se descarta porque se enfoca en continuidad del negocio y recuperación ante desastres, no en cumplimiento normativo gubernamental. Zona de disponibilidad se descarta porque trata sobre resiliencia física dentro de una región, no sobre soberanía de datos. Punto de presencia se descarta porque es un punto de conexión de red, sin relación con requisitos regulatorios."},
+{id:14,module:2,q:"Una empresa distribuye su aplicación entre varias ubicaciones físicamente separadas dentro de la misma región de Azure, cada una con alimentación eléctrica, refrigeración y redes independientes, para que si una ubicación falla, las otras mantengan la disponibilidad del servicio. ¿Qué concepto describe esas ubicaciones?",options:["Regiones emparejadas","Zonas de disponibilidad","Centros de datos aislados en distintas regiones","Puntos de presencia"],correct:1,explain:"Zonas de disponibilidad es correcta porque son ubicaciones físicamente separadas dentro de una misma región, cada una con infraestructura independiente (energía, refrigeración, redes), diseñadas para reducir el impacto de fallas localizadas. Regiones emparejadas se descarta porque son dos regiones distintas, no ubicaciones dentro de la misma región. La opción de centros de datos en distintas regiones se descarta porque el escenario específica 'dentro de la misma región'. Puntos de presencia se descarta porque se relacionan con conectividad de red hacia usuarios, no con resiliencia de cómputo dentro de una región."},
+{id:15,module:2,q:"Una empresa tiene 15 suscripciones de Azure diferentes (Desarrollo, Producción, Pruebas, entre otras) y quiere aplicar una misma política de seguridad a todas ellas sin configurarla una por una. ¿Qué elemento de la jerarquía de Azure permite lograr esto de forma más eficiente?",options:["Grupo de recursos","Suscripción individual","Grupo de administración","Recurso individual"],correct:2,explain:"Grupo de administración es correcta porque es el nivel más alto de la jerarquía y permite organizar y administrar varias suscripciones al mismo tiempo, aplicando políticas que las suscripciones subordinadas heredan automáticamente. Grupo de recursos se descarta porque agrupa recursos dentro de una sola suscripción, no varias suscripciones a la vez. Suscripción individual se descarta porque configurar cada una por separado es justo lo que se quiere evitar. Recurso individual se descarta porque es el elemento más granular, muy por debajo del nivel necesario para esta tarea."},
+{id:16,module:2,q:"Un arquitecto organiza los recursos de una aplicación web (una máquina virtual, una base de datos, una cuenta de almacenamiento y una red virtual) dentro de un mismo contenedor lógico para facilitar su administración conjunta dentro de la suscripción 'Producción'. ¿Qué elemento de la jerarquía está utilizando?",options:["Grupo de administración","Grupo de recursos","Región soberana","Zona de disponibilidad"],correct:1,explain:"Grupo de recursos es correcta porque es un contenedor donde se agrupan recursos de Azure relacionados entre sí (como los componentes de una misma aplicación web), facilitando su administración conjunta. Grupo de administración se descarta porque organiza suscripciones completas, no recursos individuales de una aplicación. Región soberana y zona de disponibilidad se descartan porque son conceptos de arquitectura física/geográfica de Azure, no de la jerarquía organizativa de recursos."},
+{id:17,module:2,q:"Un administrador necesita entender el orden correcto en que se organizan y heredan las configuraciones dentro de la jerarquía de Azure, desde el nivel más alto hasta el más específico. ¿Cuál es el orden correcto?",options:["Suscripciones → Grupos de administración → Recursos → Grupos de recursos","Grupos de administración → Suscripciones → Grupos de recursos → Recursos","Grupos de recursos → Suscripciones → Grupos de administración → Recursos","Recursos → Grupos de recursos → Grupos de administración → Suscripciones"],correct:1,explain:"La jerarquía oficial de Azure es Grupos de administración (nivel más alto) → Suscripciones → Grupos de recursos → Recursos (nivel más específico), y las configuraciones y políticas se heredan de arriba hacia abajo, por lo que esa es la secuencia correcta. Las otras tres opciones invierten o desordenan incorrectamente los niveles, rompiendo la lógica de herencia de lo general a lo específico descrita en el material."},
+{id:18,module:2,q:"Una empresa necesita administrar centralmente quién puede acceder a sus aplicaciones, verificar identidades de usuarios y gestionar contraseñas y autenticación multifactor para sus 100 empleados, sin importar en qué región de Azure trabajen. ¿Qué servicio describe esta necesidad y cómo se clasifica respecto a la región?",options:["Azure Virtual Machines — servicio regional","Microsoft Entra ID (Azure Active Directory) — servicio global","Azure App Service — servicio regional","Azure Functions — servicio global"],correct:1,explain:"Microsoft Entra ID — servicio global es correcta porque es el servicio de gestión de identidades y acceso que funciona a nivel global de Azure, sin estar asociado a una única región específica. Virtual Machines es regional, pero además no gestiona identidades, por lo que no responde al escenario. App Service es efectivamente regional, pero no es el servicio orientado a identidades descrito. Azure Functions se descarta porque es un servicio regional (se implementa en una región específica), no global, según el material de estudio."},
+{id:19,module:2,q:"Una empresa tiene su aplicación disponible simultáneamente en las regiones North Europe y East US. Necesita un servicio que dirija automáticamente a cada usuario hacia el punto de conexión más adecuado, y que redirija el tráfico a otra región si una de ellas presenta un problema. ¿Qué servicio es el más adecuado?",options:["Microsoft Entra ID","Azure Traffic Manager","Azure Dedicated Host","Zona de disponibilidad"],correct:1,explain:"Azure Traffic Manager es correcta porque permite dirigir el tráfico de los usuarios hacia diferentes ubicaciones o puntos de conexión según la configuración, mejorando disponibilidad, rendimiento y distribución geográfica del tráfico, tal como se describe. Microsoft Entra ID se descarta porque gestiona identidades y acceso, no el enrutamiento de tráfico entre regiones. Azure Dedicated Host se descarta porque se refiere a hardware físico dedicado, sin relación con enrutamiento. Zona de disponibilidad se descarta porque protege contra fallas dentro de una región, pero no dirige tráfico entre regiones distintas como North Europe y East US."},
+{id:20,module:2,q:"Un arquitecto debe crear una máquina virtual y, durante el proceso, el portal de Azure le solicita obligatoriamente seleccionar una ubicación específica (por ejemplo, 'North Europe') antes de continuar. ¿Qué característica de Azure Virtual Machines explica esta obligación?",options:["Es un servicio global","Es un servicio regional, ya que su infraestructura de soporte está asociada a una región específica","Es un grupo de administración","Es un punto de presencia"],correct:1,explain:"La opción correcta indica que es un servicio regional, ya que Azure Virtual Machines requiere elegir la región donde estará implementado porque la infraestructura que lo soporta está asociada a esa ubicación geográfica. 'Servicio global' se descarta porque, si lo fuera, no requeriría seleccionar obligatoriamente una región (como ocurre con Microsoft Entra ID). 'Grupo de administración' se descarta porque es un nivel jerárquico de organización, no un tipo de servicio con dependencia regional. 'Punto de presencia' se descarta porque es un punto de conexión de red, no el concepto que explica la obligación de elegir región."},
+{id:21,module:3,q:"Un equipo de desarrollo necesita crear máquinas virtuales temporales únicamente durante algunas horas para probar una nueva funcionalidad, sin ningún compromiso de uso futuro. ¿Qué opción de compra es la más adecuada?",options:["Instancia reservada de 1 año","Plan de ahorro de 3 años","Instancias de pago por uso (Pay-As-You-Go)","Azure Dedicated Host"],correct:2,explain:"Pago por uso es correcta porque ofrece máxima flexibilidad sin compromiso a largo plazo, ideal para pruebas, laboratorios y proyectos temporales, exactamente el caso descrito. Instancia reservada y plan de ahorro se descartan porque ambas exigen un compromiso de 1 o 3 años, lo cual no tiene sentido para una necesidad temporal de solo algunas horas. Dedicated Host se descarta porque implica un servidor físico completo dedicado, pensado para aislamiento y control de hardware, no para pruebas cortas y esporádicas."},
+{id:22,module:3,q:"Una empresa sabe que utilizará Azure de forma constante durante los próximos 3 años y quiere obtener un precio más favorable a cambio de comprometerse con un determinado nivel de gasto, sin atarse a una máquina virtual específica. ¿Qué opción describe mejor este compromiso basado en gasto, no en un recurso específico?",options:["Instancia reservada","Plan de ahorro","Instancia Spot","Reserva de capacidad a petición"],correct:1,explain:"Plan de ahorro es correcta porque permite obtener precios reducidos a cambio de comprometerse a un determinado nivel de gasto o uso (no necesariamente a una máquina virtual específica) durante 1 o 3 años. Instancia reservada se descarta porque se compromete con recursos o capacidades específicas, no únicamente con un nivel de gasto general. Instancia Spot se descarta porque no requiere ningún compromiso; ofrece descuentos a cambio de aceptar posibles interrupciones. Reserva de capacidad a petición se descarta porque busca garantizar disponibilidad de recursos, no reducir costos mediante compromiso de gasto."},
+{id:23,module:3,q:"Una empresa sabe que necesitará un servidor funcionando las 24 horas del día durante los próximos 3 años para una carga de trabajo predecible y continua, y desea el mayor descuento posible comprometiéndose con ese recurso específico. ¿Qué opción de compra es la más adecuada?",options:["Instancia reservada","Instancia Spot","Pago por uso","Instancia aislada"],correct:0,explain:"Instancia reservada es correcta porque permite ahorrar dinero mediante un compromiso de 1 o 3 años sobre recursos o capacidades específicas, siendo ideal para cargas de trabajo continuas y predecibles a largo plazo, como se describe. Instancia Spot se descarta porque puede ser interrumpida por Azure en cualquier momento, algo inaceptable para un servidor que debe funcionar 24/7. Pago por uso se descarta porque no ofrece el descuento por compromiso que la empresa busca al saber que usará el recurso de forma predecible por 3 años. Instancia aislada se descarta porque se refiere al nivel de aislamiento físico respecto a otros clientes, no a un mecanismo de ahorro por compromiso."},
+{id:24,module:3,q:"Una empresa de procesamiento de grandes volúmenes de datos por lotes puede tolerar que sus tareas se interrumpan y se reinicien sin causar un problema grave, y busca la opción de cómputo más económica posible. ¿Qué tipo de instancia es la más adecuada, y cuál es su principal riesgo?",options:["Instancia reservada; riesgo de sobrecosto","Instancia Spot; riesgo de que Azure desaloje o interrumpa la máquina virtual cuando necesite recuperar esa capacidad","Host dedicado; riesgo de falta de aislamiento","Reserva de capacidad; riesgo de no tener suficiente descuento"],correct:1,explain:"Instancia Spot es correcta porque permite utilizar capacidad de Azure disponible a un precio reducido, con la condición de que Azure puede desalojar o interrumpir la máquina virtual cuando necesite recuperar esa capacidad; es ideal para procesos por lotes que pueden reiniciarse sin causar un problema grave. Instancia reservada se descarta porque no tiene riesgo de interrupción por Azure; su característica es el compromiso a largo plazo. Host dedicado se descarta porque ofrece precisamente mayor aislamiento (no menor) y no es la opción más económica. Reserva de capacidad se descarta porque busca garantizar disponibilidad, no ofrecer el precio más bajo ni implica riesgo de desalojo."},
+{id:25,module:3,q:"Una organización del sector salud tiene requisitos especiales de cumplimiento normativo y licenciamiento que exigen mayor control sobre el servidor físico donde se ejecutan sus máquinas virtuales, incluyendo aislamiento completo respecto a otros clientes de Azure. ¿Qué opción satisface mejor esta necesidad?",options:["Instancia Spot","Plan de ahorro","Azure Dedicated Host","Pago por uso"],correct:2,explain:"Azure Dedicated Host es correcta porque proporciona un servidor físico dedicado exclusivamente a una organización, otorgando mayor control sobre el hardware y aislamiento respecto a otros clientes, ideal para cumplimiento normativo y requisitos especiales de licenciamiento. Instancia Spot se descarta porque no ofrece ningún tipo de control o aislamiento de hardware dedicado; además puede ser interrumpida. Plan de ahorro se descarta porque es un mecanismo de descuento por compromiso de gasto, no una solución de aislamiento físico. Pago por uso se descarta porque es solo un modelo de facturación flexible, sin relación con el control de hardware físico."},
+{id:26,module:3,q:"Un arquitecto necesita explicar a su equipo la diferencia entre una 'instancia aislada' y un 'Dedicated Host', ya que ambos conceptos se relacionan con aislamiento pero no son lo mismo. ¿Cuál afirmación distingue correctamente ambos conceptos?",options:["Una instancia aislada te da un servidor físico completo dedicado; un Dedicated Host solo ofrece aislamiento de red","Una instancia aislada ejecuta una VM con alto nivel de aislamiento respecto a otros clientes; un Dedicated Host otorga control y dedicación sobre un servidor físico completo","Ambos conceptos son sinónimos y se usan indistintamente en Azure","Una instancia aislada solo aplica a instancias Spot, y un Dedicated Host solo aplica a instancias reservadas"],correct:1,explain:"La opción correcta indica que una instancia aislada ejecuta una VM con alto nivel de aislamiento respecto a otros clientes, mientras que un Dedicated Host otorga control y dedicación sobre un servidor físico completo; son conceptos relacionados pero distintos. La primera opción invierte las definiciones: es el Dedicated Host el que entrega el servidor físico completo, no la instancia aislada. 'Son sinónimos' es incorrecta porque el material explícitamente distingue ambos conceptos. La última opción es incorrecta porque ninguno de los dos está exclusivamente ligado a instancias Spot ni a instancias reservadas; son categorías independientes relacionadas con aislamiento/control de hardware."},
+{id:27,module:3,q:"Una empresa planea desplegar 50 máquinas virtuales en la región East US dentro de tres meses para un lanzamiento importante. Le preocupa que, llegado el momento, no haya suficiente capacidad disponible en esa región. ¿Qué opción debería usar para asegurar que tendrá esa capacidad disponible cuando la necesite?",options:["Instancia reservada","Reserva de capacidad a petición","Instancia Spot","Plan de ahorro"],correct:1,explain:"Reserva de capacidad a petición es correcta porque permite reservar capacidad de proceso en una región específica o zona de disponibilidad, con el objetivo principal de garantizar que habrá recursos disponibles cuando se necesiten implementar las máquinas virtuales, exactamente la preocupación de la empresa. Instancia reservada se descarta porque su objetivo principal es ahorrar dinero mediante un compromiso de 1 o 3 años, no garantizar disponibilidad de capacidad. Instancia Spot se descarta porque no garantiza disponibilidad; de hecho puede ser interrumpida. Plan de ahorro se descarta porque se enfoca en reducir costos mediante compromiso de gasto, no en asegurar capacidad disponible."},
+{id:28,module:3,q:"Un estudiante de AZ-900 confunde 'instancia reservada' con 'reserva de capacidad' porque ambas involucran compromisos de 1 o 3 años. ¿Cuál es la diferencia clave entre ambos conceptos según su objetivo principal?",options:["Ambas tienen exactamente el mismo objetivo: reducir costos","La instancia reservada busca garantizar disponibilidad; la reserva de capacidad busca reducir costos","La instancia reservada busca reducir costos mediante compromiso; la reserva de capacidad busca garantizar que habrá recursos disponibles","Ninguna de las dos tiene relación con compromisos de tiempo"],correct:2,explain:"La opción correcta indica que la instancia reservada busca reducir costos mediante compromiso, mientras que la reserva de capacidad busca garantizar que habrá recursos disponibles; esos son sus objetivos principales respectivos. 'Ambas buscan lo mismo' es incorrecta porque no se centran igualmente en el costo. La segunda opción invierte los objetivos: es la instancia reservada la asociada al ahorro, y la reserva de capacidad a la disponibilidad. La última opción es incorrecta porque ambas sí pueden involucrar compromisos de 1 o 3 años según el material."},
+{id:29,module:3,q:"Un arquitecto debe recomendar la opción de compra correcta para cinco escenarios: (1) pruebas cortas sin compromiso, (2) carga continua y predecible a 3 años sobre un recurso específico, (3) procesamiento por lotes tolerante a interrupciones, (4) garantizar capacidad en una región para un lanzamiento futuro, y (5) hardware físico dedicado por cumplimiento normativo. ¿Qué combinación asocia correctamente cada escenario con su opción?",options:["(1) Pago por uso, (2) Instancia reservada, (3) Instancia Spot, (4) Reserva de capacidad, (5) Dedicated Host","(1) Instancia reservada, (2) Pago por uso, (3) Dedicated Host, (4) Instancia Spot, (5) Reserva de capacidad","(1) Plan de ahorro, (2) Instancia Spot, (3) Pago por uso, (4) Dedicated Host, (5) Reserva de capacidad","(1) Reserva de capacidad, (2) Dedicated Host, (3) Plan de ahorro, (4) Pago por uso, (5) Instancia Spot"],correct:0,explain:"La primera combinación es correcta porque respeta el objetivo principal de cada opción: pago por uso = flexibilidad sin compromiso (1); instancia reservada = ahorro con compromiso sobre un recurso específico (2); instancia Spot = bajo costo aceptando interrupciones (3); reserva de capacidad = garantizar disponibilidad (4); Dedicated Host = hardware físico dedicado (5). La segunda opción invierte varias asociaciones clave, como usar instancia reservada para pruebas cortas, lo que contradice su compromiso a largo plazo. La tercera asigna pago por uso a procesamiento por lotes tolerante a interrupciones, cuando esa función corresponde a la instancia Spot. La cuarta invierte casi todo, por ejemplo usando instancia Spot para cumplimiento normativo, cuando esa necesidad requiere máximo control y aislamiento (Dedicated Host)."},
+{id:30,module:3,q:"Una empresa de análisis de datos ejecuta tareas de procesamiento masivo, quiere pagar el precio más bajo posible por capacidad de cómputo, y acepta que sus trabajos se detengan si Azure necesita recuperar esa capacidad para otros clientes con mayor prioridad. ¿Qué tipo de máquina virtual ofrece precios reducidos pero puede ser interrumpida por Azure bajo esa condición?",options:["Instancia reservada","Instancia Spot","Instancia aislada","Dedicated Host"],correct:1,explain:"Instancia Spot es correcta: es el tipo de máquina virtual que ofrece precios reducidos pero puede ser interrumpida por Azure cuando necesita recuperar capacidad. Instancia reservada se descarta porque no tiene riesgo de interrupción por Azure; a cambio de su descuento exige un compromiso de uso, no tolerancia a desalojo. Instancia aislada se descarta porque se refiere al nivel de aislamiento respecto a otros clientes, no a un mecanismo de descuento con riesgo de interrupción. Dedicated Host se descarta porque es la opción con mayor control y exclusividad de hardware, totalmente opuesta a la idea de bajo costo con riesgo de desalojo."}
+];
+
+const TOTAL_Q = QUESTIONS.length;
+const PASS_SCORE = 700;
+const EXAM_SECONDS = 45 * 60;
+
+/* =========================================================
+   PERSISTENCE
+========================================================= */
+const LS_KEY = "az900_sim_stats_v1";
+
+function defaultStats(){
+  return { attempts: [], bestScore: 0, wrongIds: [], lastActiveDate: null, streak: 0, totalAnswered: 0, totalCorrect: 0 };
+}
+function loadStats(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return defaultStats();
+    const parsed = JSON.parse(raw);
+    return Object.assign(defaultStats(), parsed);
+  }catch(e){ return defaultStats(); }
+}
+function saveStats(s){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(s)); }catch(e){ /* storage unavailable, continue silently */ }
+}
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function touchStreak(stats){
+  const today = todayStr();
+  if(stats.lastActiveDate === today) return stats;
+  if(stats.lastActiveDate){
+    const prev = new Date(stats.lastActiveDate);
+    const diffDays = Math.round((new Date(today) - prev) / 86400000);
+    stats.streak = diffDays === 1 ? stats.streak + 1 : 1;
+  } else {
+    stats.streak = 1;
+  }
+  stats.lastActiveDate = today;
+  return stats;
+}
+
+let stats = loadStats();
+
+/* =========================================================
+   STATE
+========================================================= */
+const state = {
+  screen: "home",
+  mode: null,             // 'simulacro' | 'practica' | 'repaso'
+  moduleFilter: "all",
+  queue: [],               // array of question objects for the session
+  index: 0,
+  answers: {},              // qid -> {selected, correctFlag, flagged}
+  instantFeedback: true,
+  examTimeLeft: EXAM_SECONDS,
+  timerHandle: null,
+  reviewFilter: "all",
+  sheetOpen: false
+};
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+/* =========================================================
+   SESSION CONTROL
+========================================================= */
+function startSession(mode, moduleFilter){
+  state.mode = mode;
+  state.moduleFilter = moduleFilter || "all";
+  state.index = 0;
+  state.answers = {};
+  state.reviewFilter = "all";
+  state.sheetOpen = false;
+
+  let pool = QUESTIONS;
+  if(mode === "practica" && state.moduleFilter !== "all"){
+    pool = QUESTIONS.filter(q => q.module === Number(state.moduleFilter));
+  }
+  if(mode === "repaso"){
+    pool = QUESTIONS.filter(q => stats.wrongIds.includes(q.id));
+  }
+
+  if(mode === "repaso" && pool.length === 0){
+    showToast("Aún no tienes preguntas falladas para repasar.");
+    return;
+  }
+
+  state.queue = shuffle(pool);
+  state.instantFeedback = (mode !== "simulacro");
+  state.examTimeLeft = EXAM_SECONDS;
+  stats = touchStreak(stats);
+  saveStats(stats);
+
+  if(mode === "simulacro"){
+    startTimer();
+  } else {
+    stopTimer();
+  }
+
+  state.screen = "quiz";
+  render();
+}
+
+function startTimer(){
+  stopTimer();
+  state.timerHandle = setInterval(() => {
+    state.examTimeLeft--;
+    if(state.examTimeLeft <= 0){
+      state.examTimeLeft = 0;
+      stopTimer();
+      finishSession();
+      return;
+    }
+    updateTimerDisplay();
+  }, 1000);
+}
+function stopTimer(){
+  if(state.timerHandle){ clearInterval(state.timerHandle); state.timerHandle = null; }
+}
+function updateTimerDisplay(){
+  const el = document.getElementById("timer-display");
+  if(!el) return;
+  const m = Math.floor(state.examTimeLeft/60), s = state.examTimeLeft%60;
+  el.textContent = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+  el.classList.toggle("text-[var(--danger)]", state.examTimeLeft <= 60);
+  el.classList.toggle("text-[var(--amber)]", state.examTimeLeft > 60 && state.examTimeLeft <= 300);
+}
+
+function currentQuestion(){ return state.queue[state.index]; }
+
+function selectOption(qid, optIndex){
+  const q = QUESTIONS.find(q => q.id === qid);
+  const existing = state.answers[qid];
+  if(state.instantFeedback && existing) return; // locked after reveal in feedback modes
+  const isCorrect = optIndex === q.correct;
+  state.answers[qid] = { selected: optIndex, correctFlag: isCorrect, flagged: existing ? existing.flagged : false };
+
+  stats.totalAnswered++;
+  if(isCorrect){ stats.totalCorrect++; }
+  if(!isCorrect){
+    if(!stats.wrongIds.includes(qid)) stats.wrongIds.push(qid);
+  } else if(state.mode !== "simulacro"){
+    stats.wrongIds = stats.wrongIds.filter(id => id !== qid);
+  }
+  saveStats(stats);
+  renderQuizBody();
+}
+
+function toggleFlag(){
+  const q = currentQuestion();
+  const existing = state.answers[q.id] || { selected: null, correctFlag: null, flagged: false };
+  existing.flagged = !existing.flagged;
+  state.answers[q.id] = existing;
+  renderQuizBody();
+}
+
+function goTo(i){
+  if(i < 0 || i >= state.queue.length) return;
+  state.index = i;
+  state.sheetOpen = false;
+  renderQuizBody();
+}
+function next(){ if(state.index < state.queue.length - 1) goTo(state.index+1); }
+function prev(){ if(state.index > 0) goTo(state.index-1); }
+
+function finishSession(){
+  stopTimer();
+  const total = state.queue.length;
+  let correct = 0;
+  const moduleStats = {1:{c:0,t:0},2:{c:0,t:0},3:{c:0,t:0}};
+  state.queue.forEach(q => {
+    moduleStats[q.module].t++;
+    const a = state.answers[q.id];
+    if(a && a.correctFlag){ correct++; moduleStats[q.module].c++; }
+  });
+  const pct = total ? Math.round((correct/total)*100) : 0;
+  const score1000 = total ? Math.round((correct/total)*1000) : 0;
+
+  const attempt = {
+    date: new Date().toISOString(),
+    mode: state.mode,
+    correct, total, pct, score1000,
+    moduleStats
+  };
+  stats.attempts.unshift(attempt);
+  stats.attempts = stats.attempts.slice(0, 20);
+  if(state.mode === "simulacro" && score1000 > stats.bestScore){ stats.bestScore = score1000; }
+  saveStats(stats);
+
+  state.lastResult = attempt;
+  state.screen = "results";
+  render();
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+let toastTimer = null;
+function showToast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+/* =========================================================
+   RENDER — SHELL
+========================================================= */
+const app = document.getElementById("app");
+
+function render(){
+  if(state.screen === "home") renderHome();
+  else if(state.screen === "quiz") renderQuiz();
+  else if(state.screen === "results") renderResults();
+  window.scrollTo({top:0});
+}
+
+function headerBar(showBack, backLabel){
+  return `
+  <header class="sticky top-0 z-40 backdrop-blur bg-[rgba(10,14,20,0.85)] border-b" style="border-color:var(--border)">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        ${showBack ? `<button data-action="go-home" class="w-8 h-8 rounded-lg flex items-center justify-center btn-ghost focus-ring" aria-label="Volver al inicio">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>` : `<div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:var(--surface-2); border:1px solid var(--border)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M3 15a4 4 0 004 4h9a4 4 0 001-7.87A6 6 0 006.34 8.03 4.5 4.5 0 003 15z"/></svg>
+        </div>`}
+        <div class="leading-tight">
+          <div class="font-display font-semibold text-sm tracking-tight">AZ·900 <span class="text-[var(--muted)] font-normal">Simulador</span></div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 font-mono text-xs text-[var(--muted)]">
+        ${stats.streak > 0 ? `<span class="chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><path d="M12 2c1 4-3 5-3 9a3 3 0 006 0c1.2 1 2 2.8 2 4.5A5.5 5.5 0 0111.5 21 6.5 6.5 0 015 14.5C5 9 9 7 9 3c1.5 1 3 3 3 3s0-2 0-4z"/></svg>${stats.streak}d</span>` : ""}
+      </div>
+    </div>
+  </header>`;
+}
+
+/* =========================================================
+   RENDER — HOME
+========================================================= */
+function renderHome(){
+  const attempts = stats.attempts;
+  const lastSim = attempts.find(a => a.mode === "simulacro");
+  document.title = "AZ·900 — Simulador de examen";
+
+  app.innerHTML = `
+    ${headerBar(false)}
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 pb-16">
+
+      <section class="pt-10 pb-8 relative">
+        <div class="absolute inset-0 -z-10 grid-veil"></div>
+        <p class="chip mb-4">Microsoft Certified · Azure Fundamentals</p>
+        <h1 class="font-display text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.05] mb-3">
+          Prepárate para el<br><span style="color:var(--accent)">AZ&#8209;900</span> en cualquier momento del día.
+        </h1>
+        <p class="text-[var(--muted)] text-base max-w-lg">
+          30 preguntas situacionales, tres módulos, retroalimentación explicada y tu progreso guardado en este dispositivo. Estudia cinco minutos entre tareas o simula el examen completo.
+        </p>
+      </section>
+
+      <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+        ${statCard("Mejor puntuación", stats.bestScore ? stats.bestScore : "—", stats.bestScore ? "/ 1000" : "aún sin intentos")}
+        ${statCard("Racha de estudio", stats.streak || 0, "días seguidos")}
+        ${statCard("Preguntas respondidas", stats.totalAnswered, "en total")}
+        ${statCard("Pendientes de repaso", stats.wrongIds.length, "preguntas falladas")}
+      </section>
+
+      <section class="mb-10">
+        <div class="flex items-baseline justify-between mb-3">
+          <h2 class="font-display text-lg font-semibold">Modos de estudio</h2>
+        </div>
+        <div class="grid sm:grid-cols-1 gap-3">
+
+          <button data-action="pick-simulacro" class="mode-card card rounded-2xl p-5 text-left focus-ring">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2 mb-1.5">
+                  <span class="chip" style="border-color:var(--accent); color:#DCE8FF; background:var(--accent-dim)">Recomendado</span>
+                </div>
+                <h3 class="font-display font-semibold text-base mb-1">Simulacro completo</h3>
+                <p class="text-sm text-[var(--muted)] leading-relaxed">30 preguntas de los tres módulos, 45 minutos de cronómetro, sin retroalimentación hasta el final — igual que el examen real.</p>
+              </div>
+              <div class="font-mono text-xs text-[var(--muted)] text-right flex-none">
+                <div>30 preg.</div><div>45:00</div>
+              </div>
+            </div>
+          </button>
+
+          <button data-action="open-practica-sheet" class="mode-card card rounded-2xl p-5 text-left focus-ring">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-semibold text-base mb-1">Práctica por módulo</h3>
+                <p class="text-sm text-[var(--muted)] leading-relaxed">Elige un módulo o todos. Corrección instantánea con explicación después de cada pregunta, sin cronómetro.</p>
+              </div>
+              <div class="font-mono text-xs text-[var(--muted)] text-right flex-none">Sin límite</div>
+            </div>
+          </button>
+
+          <button data-action="pick-repaso" class="mode-card card rounded-2xl p-5 text-left focus-ring">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="font-display font-semibold text-base mb-1">Repaso de fallos</h3>
+                <p class="text-sm text-[var(--muted)] leading-relaxed">Solo las preguntas que has respondido incorrectamente antes. Se actualiza automáticamente cuando las domines.</p>
+              </div>
+              <div class="font-mono text-xs text-[var(--muted)] text-right flex-none">${stats.wrongIds.length} preg.</div>
+            </div>
+          </button>
+
+        </div>
+      </section>
+
+      <section class="mb-6">
+        <h2 class="font-display text-lg font-semibold mb-3">Contenido cubierto</h2>
+        <div class="grid sm:grid-cols-3 gap-3">
+          ${Object.entries(MODULES).map(([n,label]) => `
+            <div class="card-2 rounded-xl p-4">
+              <div class="font-mono text-xs text-[var(--accent)] mb-1">MÓDULO ${n}</div>
+              <div class="text-sm text-[var(--text)] leading-snug">${label}</div>
+              <div class="text-xs text-[var(--muted)] mt-1">${QUESTIONS.filter(q=>q.module==n).length} preguntas</div>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+
+      ${attempts.length ? `
+      <section>
+        <h2 class="font-display text-lg font-semibold mb-3">Historial reciente</h2>
+        <div class="card rounded-xl divide-y" style="border-color:var(--border)">
+          ${attempts.slice(0,5).map(a => `
+            <div class="flex items-center justify-between px-4 py-3" style="border-color:var(--border)">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center font-mono text-xs ${a.pct>=70?'text-[var(--success)]':'text-[var(--danger)]'}" style="background:var(--surface-2); border:1px solid var(--border)">${a.pct}%</div>
+                <div>
+                  <div class="text-sm">${modeLabel(a.mode)}</div>
+                  <div class="text-xs text-[var(--muted)] font-mono">${new Date(a.date).toLocaleDateString('es-DO',{day:'2-digit',month:'short'})} · ${a.correct}/${a.total} correctas</div>
+                </div>
+              </div>
+              ${a.mode==='simulacro' ? `<div class="font-mono text-sm text-[var(--muted)]">${a.score1000}<span class="text-xs">/1000</span></div>` : ""}
+            </div>
+          `).join("")}
+        </div>
+      </section>` : ""}
+
+    </main>
+
+    ${practicaSheet()}
+  `;
+  bindDelegatedEvents();
+}
+
+function statCard(label, value, sub){
+  return `
+  <div class="card-2 rounded-lg p-3.5">
+    <div class="font-mono text-2xl font-medium">${value}</div>
+    <div class="text-xs text-[var(--muted)] mt-1 leading-tight">${label}</div>
+    <div class="text-[10px] text-[var(--muted)] opacity-70 font-mono">${sub}</div>
+  </div>`;
+}
+
+function modeLabel(m){
+  return m === "simulacro" ? "Simulacro completo" : m === "practica" ? "Práctica por módulo" : "Repaso de fallos";
+}
+
+function practicaSheet(){
+  return `
+  <div id="practica-sheet" class="sheet ${state.sheetOpen==='practica' ? 'open' : ''}" data-action="sheet-backdrop">
+    <div class="sheet-panel" onclick="event.stopPropagation()">
+      <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background:var(--border)"></div>
+      <h3 class="font-display text-lg font-semibold mb-1">Práctica por módulo</h3>
+      <p class="text-sm text-[var(--muted)] mb-5">Elige qué contenido quieres reforzar ahora mismo.</p>
+      <div class="grid gap-2">
+        <button data-action="start-practica" data-module="all" class="opt-btn focus-ring">
+          <span class="opt-badge">•</span>
+          <span><span class="block text-sm font-medium">Todos los módulos</span><span class="block text-xs text-[var(--muted)]">30 preguntas mezcladas</span></span>
+        </button>
+        ${Object.entries(MODULES).map(([n,label]) => `
+        <button data-action="start-practica" data-module="${n}" class="opt-btn focus-ring">
+          <span class="opt-badge">${n}</span>
+          <span><span class="block text-sm font-medium">${label}</span><span class="block text-xs text-[var(--muted)]">${QUESTIONS.filter(q=>q.module==n).length} preguntas</span></span>
+        </button>`).join("")}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================
+   RENDER — QUIZ
+========================================================= */
+function renderQuiz(){
+  document.title = "AZ·900 — " + modeLabel(state.mode);
+  app.innerHTML = `
+    ${headerBar(true)}
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 pb-28" id="quiz-main"></main>
+    ${navSheet()}
+  `;
+  renderQuizBody();
+  bindDelegatedEvents();
+}
+
+function renderQuizBody(){
+  const main = document.getElementById("quiz-main");
+  if(!main) return;
+  const q = currentQuestion();
+  const total = state.queue.length;
+  const answered = state.answers[q.id];
+  const pctDone = Math.round((state.index/total)*100);
+  const answeredCount = Object.keys(state.answers).filter(id => state.queue.some(qq=>qq.id==id)).length;
+
+  main.innerHTML = `
+    <div class="pt-5 pb-3 sticky z-30" style="top:56px; background:linear-gradient(var(--bg) 70%, transparent)">
+      <div class="flex items-center justify-between mb-2 text-xs font-mono text-[var(--muted)]">
+        <span>Pregunta ${state.index+1} de ${total}</span>
+        <div class="flex items-center gap-3">
+          ${state.mode === "simulacro" ? `<span id="timer-display" class="font-mono">${fmtTime(state.examTimeLeft)}</span>` : `<span>${answeredCount}/${total} resp.</span>`}
+          <button data-action="open-nav-sheet" class="btn-ghost rounded-md px-2 py-1 flex items-center gap-1 focus-ring">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pctDone}%"></div></div>
+    </div>
+
+    <div class="fade-in" key="${q.id}">
+      <div class="flex items-center justify-between mt-6 mb-3">
+        <span class="chip">Módulo ${q.module} · ${MODULES[q.module]}</span>
+        <button data-action="toggle-flag" class="w-8 h-8 rounded-md flex items-center justify-center btn-ghost focus-ring" aria-label="Marcar para revisar">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="${answered && answered.flagged ? 'var(--amber)' : 'none'}" stroke="${answered && answered.flagged ? 'var(--amber)' : 'currentColor'}" stroke-width="2"><path d="M5 3v18l7-4 7 4V3H5z"/></svg>
+        </button>
+      </div>
+
+      <h2 class="text-lg sm:text-xl leading-snug font-medium mb-6">${q.q}</h2>
+
+      <div class="grid gap-2.5 mb-6">
+        ${q.options.map((opt,i) => optionButton(q, i, opt, answered)).join("")}
+      </div>
+
+      ${answered ? explanationPanel(q, answered) : ""}
+    </div>
+
+    <div class="fixed bottom-0 left-0 right-0 z-30 border-t" style="background:rgba(10,14,20,0.92); backdrop-filter:blur(8px); border-color:var(--border); padding-bottom:env(safe-area-inset-bottom,0px)">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
+        <button data-action="prev-q" class="btn-ghost rounded-lg px-4 py-2.5 text-sm font-medium focus-ring" ${state.index===0 ? "disabled":""}>Anterior</button>
+        <div class="flex-1"></div>
+        ${state.index === total-1
+          ? `<button data-action="finish" class="btn-primary rounded-lg px-5 py-2.5 text-sm font-semibold focus-ring">Finalizar sesión</button>`
+          : `<button data-action="next-q" class="btn-primary rounded-lg px-5 py-2.5 text-sm font-semibold focus-ring">Siguiente</button>`
+        }
+      </div>
+    </div>
+  `;
+  updateTimerDisplay();
+  renderNavGrid();
+}
+
+function optionButton(q, i, opt, answered){
+  const letter = "ABCD"[i];
+  let cls = "opt-btn focus-ring";
+  const locked = state.instantFeedback && answered;
+  if(locked) cls += " locked";
+  if(answered){
+    if(i === q.correct) cls += " correct";
+    else if(i === answered.selected) cls += " incorrect";
+    else cls += " dim";
+  } else if(false){}
+  return `
+    <button data-action="select-opt" data-qid="${q.id}" data-idx="${i}" class="${cls}" ${locked ? "disabled":""}>
+      <span class="opt-badge">${letter}</span>
+      <span class="text-sm leading-relaxed pt-0.5">${opt}</span>
+      ${answered && i===q.correct ? `<svg class="ml-auto flex-none mt-1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>` : ""}
+      ${answered && i===answered.selected && i!==q.correct ? `<svg class="ml-auto flex-none mt-1" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>` : ""}
+    </button>`;
+}
+
+function explanationPanel(q, answered){
+  return `
+  <div class="fade-in card-2 rounded-xl p-4 mb-4">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-xs font-mono font-medium ${answered.correctFlag ? 'text-[var(--success)]' : 'text-[var(--danger)]'}">${answered.correctFlag ? '✓ CORRECTO' : '✕ INCORRECTO'}</span>
+      <span class="text-xs text-[var(--muted)] font-mono">· Respuesta correcta: ${"ABCD"[q.correct]}</span>
+    </div>
+    <p class="text-sm text-[var(--muted)] leading-relaxed">${q.explain}</p>
+  </div>`;
+}
+
+function fmtTime(sec){
+  const m = Math.floor(sec/60), s = sec%60;
+  return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
+
+function navSheet(){
+  return `
+  <div id="nav-sheet" class="sheet" data-action="sheet-backdrop">
+    <div class="sheet-panel" onclick="event.stopPropagation()">
+      <div class="w-10 h-1 rounded-full mx-auto mb-4" style="background:var(--border)"></div>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display text-base font-semibold">Preguntas</h3>
+        <button data-action="close-sheet" class="w-7 h-7 rounded-md flex items-center justify-center btn-ghost focus-ring">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="nav-grid" class="grid grid-cols-6 sm:grid-cols-8 gap-2 mb-4"></div>
+      <div class="flex items-center gap-4 text-xs text-[var(--muted)] font-mono flex-wrap">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:var(--surface-2); border:1px solid var(--border)"></span>Sin responder</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm" style="background:var(--accent-dim); border:1px solid var(--accent)"></span>Actual</span>
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background:var(--amber)"></span>Marcada</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderNavGrid(){
+  const grid = document.getElementById("nav-grid");
+  if(!grid) return;
+  grid.innerHTML = state.queue.map((q,i) => {
+    const a = state.answers[q.id];
+    let cls = "nav-dot";
+    if(i === state.index) cls += " current";
+    else if(a && state.instantFeedback) cls += a.correctFlag ? " correct-mark" : " incorrect-mark";
+    else if(a) cls += " answered";
+    if(a && a.flagged) cls += " flag";
+    return `<button data-action="jump-to" data-i="${i}" class="${cls} focus-ring">${i+1}</button>`;
+  }).join("");
+}
+
+/* =========================================================
+   RENDER — RESULTS
+========================================================= */
+function renderResults(){
+  const r = state.lastResult;
+  document.title = "AZ·900 — Resultados";
+  const isExam = r.mode === "simulacro";
+  const passed = isExam ? r.score1000 >= PASS_SCORE : r.pct >= 70;
+  const ringPct = isExam ? Math.min(100, Math.round(r.score1000/10)) : r.pct;
+
+  app.innerHTML = `
+    ${headerBar(true)}
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 pb-16">
+
+      <section class="pt-10 pb-8 text-center">
+        <p class="chip mb-5">${modeLabel(r.mode)} · ${new Date(r.date).toLocaleDateString('es-DO',{day:'2-digit',month:'long',year:'numeric'})}</p>
+        <div class="relative w-44 h-44 mx-auto mb-5">
+          <svg width="176" height="176" viewBox="0 0 176 176" class="-rotate-90">
+            <circle cx="88" cy="88" r="78" fill="none" stroke-width="10" class="ring-bg"/>
+            <circle cx="88" cy="88" r="78" fill="none" stroke-width="10"
+              class="ring-fill ${passed ? 'pass' : 'fail'}"
+              stroke-dasharray="${2*Math.PI*78}"
+              stroke-dashoffset="${2*Math.PI*78*(1-ringPct/100)}"/>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            ${isExam ? `
+              <div class="font-mono text-4xl font-semibold">${r.score1000}</div>
+              <div class="text-xs text-[var(--muted)] font-mono">/ 1000 pts</div>
+            ` : `
+              <div class="font-mono text-4xl font-semibold">${r.pct}%</div>
+              <div class="text-xs text-[var(--muted)] font-mono">${r.correct}/${r.total}</div>
+            `}
+          </div>
+        </div>
+        ${isExam ? `
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium" style="background:${passed?'var(--success-dim)':'var(--danger-dim)'}; color:${passed?'var(--success)':'var(--danger)'}; border:1px solid ${passed?'var(--success)':'var(--danger)'}">
+            ${passed ? '✓ Aprobado' : '✕ No aprobado'} <span class="opacity-70 font-mono text-xs">· corte 700/1000</span>
+          </div>
+        ` : `<p class="text-sm text-[var(--muted)]">${r.correct} de ${r.total} respuestas correctas</p>`}
+      </section>
+
+      <section class="mb-8">
+        <h2 class="font-display text-base font-semibold mb-3">Desglose por módulo</h2>
+        <div class="grid gap-2.5">
+          ${[1,2,3].map(n => {
+            const m = r.moduleStats[n];
+            if(!m.t) return "";
+            const pct = Math.round((m.c/m.t)*100);
+            return `
+            <div class="card-2 rounded-lg p-3.5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">Módulo ${n} <span class="text-[var(--muted)] font-normal">· ${MODULES[n]}</span></span>
+                <span class="font-mono text-xs text-[var(--muted)]">${m.c}/${m.t}</span>
+              </div>
+              <div class="progress-track"><div class="progress-fill" style="width:${pct}%; background:${pct>=70?'var(--success)':pct>=40?'var(--amber)':'var(--danger)'}"></div></div>
+            </div>`;
+          }).join("")}
+        </div>
+      </section>
+
+      <section class="mb-8 flex flex-wrap gap-2.5">
+        <button data-action="retry-same" class="btn-primary rounded-lg px-4 py-2.5 text-sm font-semibold focus-ring">Reintentar</button>
+        ${stats.wrongIds.length ? `<button data-action="pick-repaso" class="btn-ghost rounded-lg px-4 py-2.5 text-sm font-medium focus-ring">Repasar fallos (${stats.wrongIds.length})</button>` : ""}
+        <button data-action="go-home" class="btn-ghost rounded-lg px-4 py-2.5 text-sm font-medium focus-ring">Volver al inicio</button>
+      </section>
+
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-display text-base font-semibold">Revisión detallada</h2>
+        </div>
+        <div class="flex gap-1.5 mb-4 flex-wrap" id="review-filters">
+          ${reviewFilterBtn("all","Todas")}
+          ${reviewFilterBtn("wrong","Falladas")}
+          ${reviewFilterBtn("correct","Correctas")}
+          ${reviewFilterBtn("flagged","Marcadas")}
+        </div>
+        <div id="review-list" class="grid gap-2"></div>
+      </section>
+
+    </main>
+  `;
+  renderReviewList();
+  bindDelegatedEvents();
+}
+
+function reviewFilterBtn(key, label){
+  const active = state.reviewFilter === key;
+  return `<button data-action="set-review-filter" data-filter="${key}" class="px-3 py-1.5 rounded-full text-xs font-medium border focus-ring" style="${active ? 'background:var(--accent-dim); border-color:var(--accent); color:#DCE8FF' : 'background:transparent; border-color:var(--border); color:var(--muted)'}">${label}</button>`;
+}
+
+function renderReviewList(){
+  const listEl = document.getElementById("review-list");
+  if(!listEl) return;
+  let items = state.queue.map((q,i) => ({q, i, a: state.answers[q.id]}));
+  if(state.reviewFilter === "wrong") items = items.filter(x => x.a && !x.a.correctFlag);
+  else if(state.reviewFilter === "correct") items = items.filter(x => x.a && x.a.correctFlag);
+  else if(state.reviewFilter === "flagged") items = items.filter(x => x.a && x.a.flagged);
+
+  if(!items.length){
+    listEl.innerHTML = `<p class="text-sm text-[var(--muted)] py-6 text-center">No hay preguntas en este filtro.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = items.map(({q,i,a}) => `
+    <details class="review-item card-2 rounded-lg px-4 py-3">
+      <summary class="flex items-center gap-3">
+        <svg class="chev flex-none transition-transform" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <span class="opt-badge flex-none !w-6 !h-6 text-[11px] ${a && a.correctFlag ? '!border-[var(--success)] !text-[var(--success)]' : a ? '!border-[var(--danger)] !text-[var(--danger)]' : ''}">${i+1}</span>
+        <span class="text-sm flex-1 leading-snug">${q.q.length > 90 ? q.q.slice(0,90)+'…' : q.q}</span>
+        ${a && a.flagged ? `<svg class="flex-none" width="13" height="13" viewBox="0 0 24 24" fill="var(--amber)" stroke="none"><path d="M5 3v18l7-4 7 4V3H5z"/></svg>` : ""}
+      </summary>
+      <div class="mt-3 pl-9">
+        <div class="grid gap-2 mb-3">
+          ${q.options.map((opt,oi) => {
+            let cls = "text-xs px-3 py-2 rounded-md border flex items-center gap-2";
+            let style = "border-color:var(--border); color:var(--muted)";
+            if(oi===q.correct) style = "border-color:var(--success); color:#B6F5DC; background:var(--success-dim)";
+            else if(a && oi===a.selected) style = "border-color:var(--danger); color:#FFD3D3; background:var(--danger-dim)";
+            return `<div class="${cls}" style="${style}"><span class="font-mono">${"ABCD"[oi]}</span><span>${opt}</span></div>`;
+          }).join("")}
+        </div>
+        <p class="text-xs text-[var(--muted)] leading-relaxed">${q.explain}</p>
+      </div>
+    </details>
+  `).join("");
+}
+
+/* =========================================================
+   EVENTS
+========================================================= */
+function bindDelegatedEvents(){
+  // handled globally via document listener set once below
+}
+
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  const action = el.dataset.action;
+
+  switch(action){
+    case "go-home":
+      stopTimer();
+      state.screen = "home";
+      render();
+      break;
+    case "pick-simulacro":
+      startSession("simulacro", "all");
+      break;
+    case "open-practica-sheet":
+      state.sheetOpen = "practica";
+      document.getElementById("practica-sheet").classList.add("open");
+      break;
+    case "start-practica":
+      document.getElementById("practica-sheet")?.classList.remove("open");
+      startSession("practica", el.dataset.module);
+      break;
+    case "pick-repaso":
+      startSession("repaso", "all");
+      break;
+    case "sheet-backdrop":
+      document.querySelectorAll(".sheet").forEach(s => s.classList.remove("open"));
+      state.sheetOpen = false;
+      break;
+    case "close-sheet":
+      document.querySelectorAll(".sheet").forEach(s => s.classList.remove("open"));
+      break;
+    case "open-nav-sheet":
+      document.getElementById("nav-sheet").classList.add("open");
+      renderNavGrid();
+      break;
+    case "jump-to":
+      document.getElementById("nav-sheet").classList.remove("open");
+      goTo(Number(el.dataset.i));
+      break;
+    case "select-opt":
+      selectOption(Number(el.dataset.qid), Number(el.dataset.idx));
+      break;
+    case "toggle-flag":
+      toggleFlag();
+      break;
+    case "prev-q":
+      prev();
+      break;
+    case "next-q":
+      next();
+      break;
+    case "finish":
+      finishSession();
+      break;
+    case "retry-same":
+      startSession(state.mode, state.moduleFilter);
+      break;
+    case "set-review-filter":
+      state.reviewFilter = el.dataset.filter;
+      document.querySelectorAll('#review-filters [data-action="set-review-filter"]').forEach(b => {
+        const active = b.dataset.filter === state.reviewFilter;
+        b.style.background = active ? 'var(--accent-dim)' : 'transparent';
+        b.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+        b.style.color = active ? '#DCE8FF' : 'var(--muted)';
+      });
+      renderReviewList();
+      break;
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if(state.screen !== "quiz") return;
+  if(["1","2","3","4"].includes(e.key)){
+    const q = currentQuestion();
+    selectOption(q.id, Number(e.key)-1);
+  } else if(e.key === "ArrowRight"){ next(); }
+  else if(e.key === "ArrowLeft"){ prev(); }
+});
+
+/* =========================================================
+   INIT
+========================================================= */
+render();
+</script>
+</body>
+</html>
